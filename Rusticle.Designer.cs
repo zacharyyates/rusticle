@@ -1,4 +1,4 @@
-﻿namespace aim {
+﻿namespace Rusticle {
 	partial class Reticle {
 		/// <summary>
 		/// Required designer variable.
@@ -40,8 +40,6 @@
 			this.TopMost = true;
 			this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Reticle_FormClosed);
 			this.Load += new System.EventHandler(this.Reticle_Load);
-			this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Reticle_KeyDown);
-			this.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.Reticle_MouseDoubleClick);
 			this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Reticle_MouseDown);
 			this.ResumeLayout(false);
 

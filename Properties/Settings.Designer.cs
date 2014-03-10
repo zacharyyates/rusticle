@@ -22,5 +22,29 @@ namespace Rusticle.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int OffsetX {
+            get {
+                return ((int)(this["OffsetX"]));
+            }
+            set {
+                this["OffsetX"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("6")]
+        public int OffsetY {
+            get {
+                return ((int)(this["OffsetY"]));
+            }
+            set {
+                this["OffsetY"] = value;
+            }
+        }
     }
 }
