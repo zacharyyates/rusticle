@@ -3,14 +3,22 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using MovablePython;
+using WindowsInput;
+using WindowsInput.Native;
 
 namespace Rusticle {
 	public partial class Reticle : Form {
 
-		public const int WM_NCLBUTTONDOWN = 0xA1;
-		public const int HT_CAPTION = 0x2;
+		const int WM_NCLBUTTONDOWN = 0xA1;
+		const int HT_CAPTION = 0x2;
+		const uint WM_KEYDOWN = 0x100;
+		const uint WM_KEYUP = 0x101;
+		const uint VK_W = 0x57;
+		const uint VK_SHIFT = 0x10;
 
 		[DllImportAttribute("user32.dll")]
 		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
@@ -29,26 +37,48 @@ namespace Rusticle {
 			public int Bottom;      // y position of lower-right corner
 		}
 
-		Timer _refreshTimer = new Timer();
+		[DllImport("user32.dll")]
+		static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-		Hotkey _settingsHotKey;
-		Hotkey _resetHotKey;
-		Hotkey _exitHotKey;
-		Hotkey _upHotKey;
-		Hotkey _downHotKey;
-		Hotkey _leftHotKey;
-		Hotkey _rightHotKey;
+		System.Windows.Forms.Timer _refreshTimer = new System.Windows.Forms.Timer();
+
+		Hotkey _settingsHotkey;
+		Hotkey _resetHotkey;
+		Hotkey _exitHotkey;
+
+		Hotkey _upHotkey;
+		Hotkey _downHotkey;
+		Hotkey _leftHotkey;
+		Hotkey _rightHotkey;
+
+		Hotkey _runHotkey;
+
+		Process _rustProcess = null;
+		IntPtr _rustHandle = IntPtr.Zero;
 
 		bool _inSettingsMode = false;
 
-		public int OffsetX {
+		object _lockRunMode = new object();
+		bool InRunMode {
+			get {
+				lock (_lockRunMode) { return _inRunMode; }
+			}
+			set {
+				lock (_lockRunMode) { _inRunMode = value; }
+			}
+		}
+		bool _inRunMode = false;
+
+		int OffsetX {
 			get { return Rusticle.Properties.Settings.Default.OffsetX; }
 			set { Rusticle.Properties.Settings.Default.OffsetX = value; }
 		}
-		public int OffsetY {
+		int OffsetY {
 			get { return Rusticle.Properties.Settings.Default.OffsetY; }
 			set { Rusticle.Properties.Settings.Default.OffsetY = value; }
 		}
+
+		IKeyboardSimulator _keyboard;
 
 		public Reticle() {
 			InitializeComponent();
@@ -57,24 +87,48 @@ namespace Rusticle {
 			TransparencyKey = Color.White;
 			BackColor = Color.White;
 
-			_settingsHotKey = CreateHotKey(Keys.Pause, SettingsHotkey_Pressed);
-			_resetHotKey = CreateHotKey(Keys.Home, ResetHotkey_Pressed);
-			_exitHotKey = CreateHotKey(Keys.End, ExitHotkey_Pressed);
+			_settingsHotkey = CreateHotKey(Keys.Pause, SettingsHotkey_Pressed);
+			_resetHotkey = CreateHotKey(Keys.Home, ResetHotkey_Pressed);
+			_exitHotkey = CreateHotKey(Keys.End, ExitHotkey_Pressed);
 
-			_upHotKey = CreateHotKey(Keys.Up, UpHotkey_Pressed);
-			_downHotKey = CreateHotKey(Keys.Down, DownHotkey_Pressed);
-			_leftHotKey = CreateHotKey(Keys.Left, LeftHotkey_Pressed);
-			_rightHotKey = CreateHotKey(Keys.Right, RightHotkey_Pressed);
+			_upHotkey = CreateHotKey(Keys.Up, UpHotkey_Pressed);
+			_downHotkey = CreateHotKey(Keys.Down, DownHotkey_Pressed);
+			_leftHotkey = CreateHotKey(Keys.Left, LeftHotkey_Pressed);
+			_rightHotkey = CreateHotKey(Keys.Right, RightHotkey_Pressed);
+
+			_runHotkey = CreateHotKey(Keys.PageUp, RunHotkey_Pressed);
+			_keyboard = new InputSimulator().Keyboard;
 			
 			_refreshTimer.Interval = 1000;
 			_refreshTimer.Tick += RefreshTimer_Tick;
 
-			_settingsHotKey.Register(this);
+			_settingsHotkey.Register(this);
+		}
+
+		void RegisterHotkeys() {
+			_resetHotkey.Register(this);
+			_exitHotkey.Register(this);
+
+			_upHotkey.Register(this);
+			_downHotkey.Register(this);
+			_leftHotkey.Register(this);
+			_rightHotkey.Register(this);
+		}
+		void UnregisterHotkeys() {
+			_resetHotkey.Unregister();
+			_exitHotkey.Unregister();
+
+			_upHotkey.Unregister();
+			_downHotkey.Unregister();
+			_leftHotkey.Unregister();
+			_rightHotkey.Unregister();
 		}
 
 		void Reticle_Load(object sender, EventArgs e) {
 			RefreshPosition();
 			_refreshTimer.Start();
+
+			//EnableRunFeature();
 		}
 
 		void Reticle_FormClosed(object sender, FormClosedEventArgs e) {
@@ -82,9 +136,102 @@ namespace Rusticle {
 			_refreshTimer.Stop();
 			_refreshTimer.Dispose();
 
+			//DisableRunFeature();
+
 			UnregisterHotkeys();
-			_settingsHotKey.Unregister();
+			_settingsHotkey.Unregister();
 		}
+
+		void RefreshPosition() {
+			SuspendLayout();
+
+			var handle = RefreshRustHandle();
+			if (handle == IntPtr.Zero) {
+				Visible = false;
+				return;
+			}
+
+			RECT rustWindow;
+			if (!GetWindowRect(new HandleRef(this, handle), out rustWindow))
+				return;
+
+			var rustWidth = rustWindow.Right - rustWindow.Left;
+			var rustHeight = rustWindow.Bottom - rustWindow.Top;
+
+			var offsetX = Width / 2;
+
+			var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
+			var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
+
+			Location = new Point(left, top);
+
+			Visible = true;
+			ResumeLayout();
+		}
+
+		IntPtr RefreshRustHandle() {
+			var processes = Process.GetProcessesByName("rust");
+			if (processes.Length > 0) {
+				_rustProcess = processes[0];
+				_rustHandle = _rustProcess.MainWindowHandle;
+
+				return _rustProcess.MainWindowHandle;
+			}
+
+			return IntPtr.Zero;
+		}
+
+		Hotkey CreateHotKey(Keys keys, HandledEventHandler handler, bool control = false) {
+			var hotkey = new Hotkey {
+				KeyCode = keys,
+				Control = control
+			};
+			hotkey.Pressed += handler;
+			return hotkey;
+		}
+
+		#region Run Feature
+
+		CancellationTokenSource _autoRunTaskToken = new CancellationTokenSource();
+
+		void EnableRunFeature() {
+			_runHotkey.Register(this);
+			//Task.Factory.StartNew(AutoRunTask, _autoRunTaskToken.Token);
+		}
+
+		void DisableRunFeature() {
+			_autoRunTaskToken.Cancel();
+			_runHotkey.Unregister();
+		}
+
+		void RunHotkey_Pressed(object sender, HandledEventArgs e) {
+			InRunMode = !InRunMode;
+			ShowWindow(_rustHandle, 1);
+
+			if (Visible && InRunMode) {
+				_keyboard.KeyDown(VirtualKeyCode.SHIFT);
+				_keyboard.KeyDown(VirtualKeyCode.VK_W);
+				_keyboard.Sleep(100);
+			} else {
+				_keyboard.KeyUp(VirtualKeyCode.VK_W);
+				_keyboard.KeyUp(VirtualKeyCode.SHIFT);
+				_keyboard.Sleep(100);
+			}
+		}
+
+		void AutoRunTask() {
+			while (!_autoRunTaskToken.IsCancellationRequested) {
+				if (Visible && InRunMode) {
+					ShowWindow(_rustHandle, 1);
+					_keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.VK_W);
+					_keyboard.Sleep(1);
+				}
+			}
+		}
+
+		#endregion
+
+		#region Positioning Feature
 
 		void RefreshTimer_Tick(object sender, EventArgs e) {
 			RefreshPosition();
@@ -155,66 +302,6 @@ namespace Rusticle {
 			}
 		}
 
-		void RegisterHotkeys() {
-			_resetHotKey.Register(this);
-			_exitHotKey.Register(this);
-			_upHotKey.Register(this);
-			_downHotKey.Register(this);
-			_leftHotKey.Register(this);
-			_rightHotKey.Register(this);
-		}
-		void UnregisterHotkeys() {
-			_resetHotKey.Unregister();
-			_exitHotKey.Unregister();
-			_upHotKey.Unregister();
-			_downHotKey.Unregister();
-			_leftHotKey.Unregister();
-			_rightHotKey.Unregister();
-		}
-
-		void RefreshPosition() {
-			SuspendLayout();
-
-			var handle = GetRustHandle();
-			if (handle == IntPtr.Zero) {
-				Visible = false;
-				return;
-			}
-
-			RECT rustWindow;
-			if (!GetWindowRect(new HandleRef(this, handle), out rustWindow))
-				return;
-
-			var rustWidth = rustWindow.Right - rustWindow.Left;
-			var rustHeight = rustWindow.Bottom - rustWindow.Top;
-
-			var offsetX = Width / 2;
-
-			var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
-			var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
-
-			Location = new Point(left, top);
-
-			Visible = true;
-			ResumeLayout();
-		}
-
-		IntPtr GetRustHandle() {
-			var processes = Process.GetProcessesByName("rust");
-			if (processes.Length > 0) {
-				return processes[0].MainWindowHandle;
-			}
-
-			return IntPtr.Zero;
-		}
-
-		Hotkey CreateHotKey(Keys keys, HandledEventHandler handler, bool control = false) {
-			var hotkey = new Hotkey {
-				KeyCode = keys,
-				Control = control
-			};
-			hotkey.Pressed += handler;
-			return hotkey;
-		}
+		#endregion
 	}
 }

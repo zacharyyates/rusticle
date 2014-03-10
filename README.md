@@ -19,6 +19,7 @@ Commands
 | Down        | Adjust reticle down
 | Left        | Adjust reticle left
 | Right       | Adjust reticle right
+| Home        | Reset reticle adjustment
 | End         | Exit rusticle
 
 Contributions welcome. <3
