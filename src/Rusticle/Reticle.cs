@@ -86,10 +86,10 @@ namespace Rusticle {
 			TransparencyKey = Color.White;
 			BackColor = Color.White;
 
+			_exitHotkey = CreateHotKey(Keys.End, ExitHotkey_Pressed);
+			
 			_settingsHotkey = CreateHotKey(Keys.Pause, SettingsHotkey_Pressed);
 			_resetHotkey = CreateHotKey(Keys.Home, ResetHotkey_Pressed);
-			_exitHotkey = CreateHotKey(Keys.End, ExitHotkey_Pressed);
-
 			_upHotkey = CreateHotKey(Keys.Up, UpHotkey_Pressed);
 			_downHotkey = CreateHotKey(Keys.Down, DownHotkey_Pressed);
 			_leftHotkey = CreateHotKey(Keys.Left, LeftHotkey_Pressed);
@@ -103,32 +103,30 @@ namespace Rusticle {
 			
 			_refreshTimer.Interval = 1000;
 			_refreshTimer.Tick += RefreshTimer_Tick;
-
-			_settingsHotkey.Register(this);
 		}
 
-		void RegisterHotkeys() {
+		void RegisterSettingsKeys() {
 			_resetHotkey.Register(this);
-			_exitHotkey.Register(this);
-
 			_upHotkey.Register(this);
 			_downHotkey.Register(this);
 			_leftHotkey.Register(this);
 			_rightHotkey.Register(this);
 		}
-		void UnregisterHotkeys() {
-			_resetHotkey.Unregister();
-			_exitHotkey.Unregister();
-
-			_upHotkey.Unregister();
-			_downHotkey.Unregister();
-			_leftHotkey.Unregister();
-			_rightHotkey.Unregister();
+		void UnregisterSettingsKeys() {
+			if (_inSettingsMode) {
+				_resetHotkey.Unregister();
+				_upHotkey.Unregister();
+				_downHotkey.Unregister();
+				_leftHotkey.Unregister();
+				_rightHotkey.Unregister();
+			}
 		}
 
 		void Reticle_Load(object sender, EventArgs e) {
 			RefreshPosition();
 			_refreshTimer.Start();
+			_exitHotkey.Register(this);
+			_settingsHotkey.Register(this);
 
 			EnableRunFeature();
 		}
@@ -140,8 +138,9 @@ namespace Rusticle {
 
 			DisableRunFeature();
 
-			UnregisterHotkeys();
+			UnregisterSettingsKeys();
 			_settingsHotkey.Unregister();
+			_exitHotkey.Unregister();
 		}
 
 		void RefreshPosition() {
@@ -192,6 +191,11 @@ namespace Rusticle {
 			return hotkey;
 		}
 
+		void ExitHotkey_Pressed(object sender, HandledEventArgs e) {
+			e.Handled = true;
+			Close();
+		}
+
 		#region Run Feature
 
 		void EnableRunFeature() {
@@ -231,9 +235,9 @@ namespace Rusticle {
 			_inSettingsMode = !_inSettingsMode;
 
 			if (_inSettingsMode)
-				RegisterHotkeys();
+				RegisterSettingsKeys();
 			else
-				UnregisterHotkeys();
+				UnregisterSettingsKeys();
 		}
 
 		void ResetHotkey_Pressed(object sender, HandledEventArgs e) {
@@ -243,13 +247,6 @@ namespace Rusticle {
 				OffsetX = 1;
 				OffsetY = 6;
 				RefreshPosition();
-			}
-		}
-
-		void ExitHotkey_Pressed(object sender, HandledEventArgs e) {
-			if (_inSettingsMode) {
-				e.Handled = true;
-				Close();
 			}
 		}
 

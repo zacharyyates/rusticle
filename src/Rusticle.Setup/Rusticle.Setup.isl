@@ -3734,7 +3734,7 @@
 		<row><td>IDS__TargetReq_DESC_PROCESSOR</td><td>1033</td><td>The processor is not adequate for running [ProductName].</td><td>0</td><td/><td>1369592557</td></row>
 		<row><td>IDS__TargetReq_DESC_RAM</td><td>1033</td><td>The amount of RAM is not adequate for running [ProductName].</td><td>0</td><td/><td>1369592557</td></row>
 		<row><td>IDS__TargetReq_DESC_RESOLUTION</td><td>1033</td><td>The screen resolution is not adequate for running [ProductName].</td><td>0</td><td/><td>1369592557</td></row>
-		<row><td>ID_STRING1</td><td>1033</td><td>http://www.agoristsoftware.com</td><td>0</td><td/><td>1369615117</td></row>
+		<row><td>ID_STRING1</td><td>1033</td><td>http://</td><td>0</td><td/><td>1369580717</td></row>
 		<row><td>ID_STRING2</td><td>1033</td><td>Agorist Software LLC</td><td>0</td><td/><td>1369621229</td></row>
 		<row><td>ID_STRING3</td><td>1033</td><td>rusticle</td><td>0</td><td/><td>1369601037</td></row>
 		<row><td>IIDS_UITEXT_FeatureUninstalled</td><td>1033</td><td>This feature will remain uninstalled.</td><td>0</td><td/><td>1369592557</td></row>
@@ -3977,7 +3977,7 @@ UwBpAG4AZwBsAGUASQBtAGEAZwBlAAEARQB4AHAAcgBlAHMAcwA=
 		<row><td>ISTheme</td><td>InstallShield Blue.theme</td></row>
 		<row><td>ISUSLock</td><td>{E8B55FEA-5A25-4FB8-9344-3F7A7664DA2D}</td></row>
 		<row><td>ISUSSignature</td><td>{68397C2A-7FF3-4C31-A703-9F4C670224B9}</td></row>
-		<row><td>ISVisitedViews</td><td>viewAssistant,viewRealSetupDesign,viewSetupDesign,viewSetupTypes,viewUpgradePaths,viewUpdateService,viewAppFiles,viewShortcuts,viewSystemSearch,viewRelease,viewDesignPatches,viewISToday</td></row>
+		<row><td>ISVisitedViews</td><td>viewAssistant,viewRealSetupDesign,viewSetupDesign,viewSetupTypes,viewUpgradePaths,viewUpdateService,viewAppFiles,viewShortcuts,viewSystemSearch,viewRelease,viewDesignPatches,viewISToday,viewProject</td></row>
 		<row><td>Limited</td><td>1</td></row>
 		<row><td>LockPermissionMode</td><td>1</td></row>
 		<row><td>MsiExecCmdLineOptions</td><td/></row>
