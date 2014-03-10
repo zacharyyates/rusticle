@@ -51,7 +51,8 @@ namespace Rusticle {
 		Hotkey _leftHotkey;
 		Hotkey _rightHotkey;
 
-		Hotkey _runHotkey;
+		Hotkey _runOnHotkey;
+		Hotkey _runOffHotkey;
 
 		Process _rustProcess = null;
 		IntPtr _rustHandle = IntPtr.Zero;
@@ -96,7 +97,10 @@ namespace Rusticle {
 			_leftHotkey = CreateHotKey(Keys.Left, LeftHotkey_Pressed);
 			_rightHotkey = CreateHotKey(Keys.Right, RightHotkey_Pressed);
 
-			_runHotkey = CreateHotKey(Keys.PageUp, RunHotkey_Pressed);
+			_runOnHotkey = CreateHotKey(Keys.PageUp, RunHotkey_Pressed);
+			_runOffHotkey = CreateHotKey(Keys.PageUp, RunHotkey_Pressed);
+			_runOffHotkey.Shift = true;
+
 			_keyboard = new InputSimulator().Keyboard;
 			
 			_refreshTimer.Interval = 1000;
@@ -128,7 +132,7 @@ namespace Rusticle {
 			RefreshPosition();
 			_refreshTimer.Start();
 
-			//EnableRunFeature();
+			EnableRunFeature();
 		}
 
 		void Reticle_FormClosed(object sender, FormClosedEventArgs e) {
@@ -136,7 +140,7 @@ namespace Rusticle {
 			_refreshTimer.Stop();
 			_refreshTimer.Dispose();
 
-			//DisableRunFeature();
+			DisableRunFeature();
 
 			UnregisterHotkeys();
 			_settingsHotkey.Unregister();
@@ -195,13 +199,17 @@ namespace Rusticle {
 		CancellationTokenSource _autoRunTaskToken = new CancellationTokenSource();
 
 		void EnableRunFeature() {
-			_runHotkey.Register(this);
+			_runOnHotkey.Register(this);
+			_runOffHotkey.Register(this);
+
 			//Task.Factory.StartNew(AutoRunTask, _autoRunTaskToken.Token);
 		}
 
 		void DisableRunFeature() {
+			_runOnHotkey.Unregister();
+			_runOffHotkey.Unregister(); 
+			
 			_autoRunTaskToken.Cancel();
-			_runHotkey.Unregister();
 		}
 
 		void RunHotkey_Pressed(object sender, HandledEventArgs e) {
@@ -211,12 +219,12 @@ namespace Rusticle {
 			if (Visible && InRunMode) {
 				_keyboard.KeyDown(VirtualKeyCode.SHIFT);
 				_keyboard.KeyDown(VirtualKeyCode.VK_W);
-				_keyboard.Sleep(100);
 			} else {
-				_keyboard.KeyUp(VirtualKeyCode.VK_W);
 				_keyboard.KeyUp(VirtualKeyCode.SHIFT);
-				_keyboard.Sleep(100);
+				_keyboard.KeyUp(VirtualKeyCode.VK_W);
 			}
+
+			e.Handled = true;
 		}
 
 		void AutoRunTask() {
