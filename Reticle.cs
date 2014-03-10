@@ -97,8 +97,8 @@ namespace Rusticle {
 			_leftHotkey = CreateHotKey(Keys.Left, LeftHotkey_Pressed);
 			_rightHotkey = CreateHotKey(Keys.Right, RightHotkey_Pressed);
 
-			_runOnHotkey = CreateHotKey(Keys.PageUp, RunHotkey_Pressed);
-			_runOffHotkey = CreateHotKey(Keys.PageUp, RunHotkey_Pressed);
+			_runOnHotkey = CreateHotKey(Keys.NumLock, RunHotkey_Pressed);
+			_runOffHotkey = CreateHotKey(Keys.NumLock, RunHotkey_Pressed);
 			_runOffHotkey.Shift = true;
 
 			_keyboard = new InputSimulator().Keyboard;

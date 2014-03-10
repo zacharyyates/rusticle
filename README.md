@@ -21,5 +21,6 @@ Commands
 | Right       | Adjust reticle right
 | Home        | Reset reticle adjustment
 | End         | Exit rusticle
+| Num Lock    | Enter/exit autorun mode
 
 Contributions welcome. <3
