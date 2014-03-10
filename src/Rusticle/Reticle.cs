@@ -3,8 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using MovablePython;
 using WindowsInput;
@@ -40,7 +38,7 @@ namespace Rusticle {
 		[DllImport("user32.dll")]
 		static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-		System.Windows.Forms.Timer _refreshTimer = new System.Windows.Forms.Timer();
+		Timer _refreshTimer = new Timer();
 
 		Hotkey _settingsHotkey;
 		Hotkey _resetHotkey;
@@ -196,20 +194,14 @@ namespace Rusticle {
 
 		#region Run Feature
 
-		CancellationTokenSource _autoRunTaskToken = new CancellationTokenSource();
-
 		void EnableRunFeature() {
 			_runOnHotkey.Register(this);
 			_runOffHotkey.Register(this);
-
-			//Task.Factory.StartNew(AutoRunTask, _autoRunTaskToken.Token);
 		}
 
 		void DisableRunFeature() {
 			_runOnHotkey.Unregister();
 			_runOffHotkey.Unregister(); 
-			
-			_autoRunTaskToken.Cancel();
 		}
 
 		void RunHotkey_Pressed(object sender, HandledEventArgs e) {
@@ -225,16 +217,6 @@ namespace Rusticle {
 			}
 
 			e.Handled = true;
-		}
-
-		void AutoRunTask() {
-			while (!_autoRunTaskToken.IsCancellationRequested) {
-				if (Visible && InRunMode) {
-					ShowWindow(_rustHandle, 1);
-					_keyboard.ModifiedKeyStroke(VirtualKeyCode.SHIFT, VirtualKeyCode.VK_W);
-					_keyboard.Sleep(1);
-				}
-			}
 		}
 
 		#endregion
