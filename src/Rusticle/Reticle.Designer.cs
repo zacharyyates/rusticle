@@ -40,7 +40,6 @@
 			this.TopMost = true;
 			this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Reticle_FormClosed);
 			this.Load += new System.EventHandler(this.Reticle_Load);
-			this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Reticle_MouseDown);
 			this.ResumeLayout(false);
 
 		}

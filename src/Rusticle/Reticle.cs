@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using MovablePython;
@@ -9,286 +11,324 @@ using WindowsInput;
 using WindowsInput.Native;
 
 namespace Rusticle {
-	public partial class Reticle : Form {
+    public partial class Reticle : Form {
 
-		const int WM_NCLBUTTONDOWN = 0xA1;
-		const int HT_CAPTION = 0x2;
-		const uint WM_KEYDOWN = 0x100;
-		const uint WM_KEYUP = 0x101;
-		const uint VK_W = 0x57;
-		const uint VK_SHIFT = 0x10;
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GetWindowRect(HandleRef hWnd, out RECT lpRect);
 
-		[DllImportAttribute("user32.dll")]
-		public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
-		[DllImportAttribute("user32.dll")]
-		public static extern bool ReleaseCapture();
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT {
+            public int Left; // x position of upper-left corner
+            public int Top; // y position of upper-left corner
+            public int Right; // x position of lower-right corner
+            public int Bottom; // y position of lower-right corner
+        }
 
-		[DllImport("user32.dll")]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		static extern bool GetWindowRect(HandleRef hWnd, out RECT lpRect);
+        [DllImport("user32.dll")]
+        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-		[StructLayout(LayoutKind.Sequential)]
-		public struct RECT {
-			public int Left;        // x position of upper-left corner
-			public int Top;         // y position of upper-left corner
-			public int Right;       // x position of lower-right corner
-			public int Bottom;      // y position of lower-right corner
-		}
+        Timer _refreshTimer = new Timer();
 
-		[DllImport("user32.dll")]
-		static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        Process _rustProcess;
+        IntPtr _rustHandle = IntPtr.Zero;
 
-		Timer _refreshTimer = new Timer();
+        bool _inSettingsMode;
 
-		Hotkey _settingsHotkey;
-		Hotkey _resetHotkey;
-		Hotkey _exitHotkey;
+        object _lockRunMode = new object();
+        bool InRunMode {
+            get {
+                lock (_lockRunMode) {
+                    return _inRunMode;
+                }
+            }
+            set {
+                lock (_lockRunMode) {
+                    _inRunMode = value;
+                }
+            }
+        }
+        bool _inRunMode;
 
-		Hotkey _upHotkey;
-		Hotkey _downHotkey;
-		Hotkey _leftHotkey;
-		Hotkey _rightHotkey;
+        int OffsetX {
+            get { return Properties.Settings.Default.OffsetX; }
+            set { Properties.Settings.Default.OffsetX = value; }
+        }
 
-		Hotkey _runOnHotkey;
-		Hotkey _runOffHotkey;
+        int OffsetY {
+            get { return Properties.Settings.Default.OffsetY; }
+            set { Properties.Settings.Default.OffsetY = value; }
+        }
 
-		Process _rustProcess = null;
-		IntPtr _rustHandle = IntPtr.Zero;
+        List<Image> _reticleImages = new List<Image>();
+        int _reticleIndex;
+        bool _reticleEnabled = true;
 
-		bool _inSettingsMode = false;
+        IKeyboardSimulator _keyboard;
 
-		object _lockRunMode = new object();
-		bool InRunMode {
-			get {
-				lock (_lockRunMode) { return _inRunMode; }
-			}
-			set {
-				lock (_lockRunMode) { _inRunMode = value; }
-			}
-		}
-		bool _inRunMode = false;
+        Hotkey _settingsHotkey;
+        Hotkey _resetHotkey;
+        Hotkey _exitHotkey;
 
-		int OffsetX {
-			get { return Rusticle.Properties.Settings.Default.OffsetX; }
-			set { Rusticle.Properties.Settings.Default.OffsetX = value; }
-		}
-		int OffsetY {
-			get { return Rusticle.Properties.Settings.Default.OffsetY; }
-			set { Rusticle.Properties.Settings.Default.OffsetY = value; }
-		}
+        Hotkey _upHotkey;
+        Hotkey _downHotkey;
+        Hotkey _leftHotkey;
+        Hotkey _rightHotkey;
 
-		IKeyboardSimulator _keyboard;
+        Hotkey _runOnHotkey;
+        Hotkey _runOffHotkey;
 
-		public Reticle() {
-			InitializeComponent();
+        Hotkey _disableReticleHotkey;
+        Hotkey _cycleReticleHotkey;
+        
+        public Reticle() {
+            InitializeComponent();
 
-			Opacity = 0.55;
-			TransparencyKey = Color.White;
-			BackColor = Color.White;
+            _exitHotkey = CreateHotkey(Keys.End, ExitHotkey_Pressed);
 
-			_exitHotkey = CreateHotKey(Keys.End, ExitHotkey_Pressed);
-			
-			_settingsHotkey = CreateHotKey(Keys.Pause, SettingsHotkey_Pressed);
-			_resetHotkey = CreateHotKey(Keys.Home, ResetHotkey_Pressed);
-			_upHotkey = CreateHotKey(Keys.Up, UpHotkey_Pressed);
-			_downHotkey = CreateHotKey(Keys.Down, DownHotkey_Pressed);
-			_leftHotkey = CreateHotKey(Keys.Left, LeftHotkey_Pressed);
-			_rightHotkey = CreateHotKey(Keys.Right, RightHotkey_Pressed);
+            _settingsHotkey = CreateHotkey(Keys.Pause, SettingsHotkey_Pressed);
+            _resetHotkey = CreateHotkey(Keys.Home, ResetHotkey_Pressed);
+            _upHotkey = CreateHotkey(Keys.Up, UpHotkey_Pressed);
+            _downHotkey = CreateHotkey(Keys.Down, DownHotkey_Pressed);
+            _leftHotkey = CreateHotkey(Keys.Left, LeftHotkey_Pressed);
+            _rightHotkey = CreateHotkey(Keys.Right, RightHotkey_Pressed);
 
-			_runOnHotkey = CreateHotKey(Keys.NumLock, RunHotkey_Pressed);
-			_runOffHotkey = CreateHotKey(Keys.NumLock, RunHotkey_Pressed);
-			_runOffHotkey.Shift = true;
+            _runOnHotkey = CreateHotkey(Keys.NumLock, RunHotkey_Pressed);
+            _runOffHotkey = CreateHotkey(Keys.NumLock, RunHotkey_Pressed);
+            _runOffHotkey.Shift = true;
 
-			_keyboard = new InputSimulator().Keyboard;
-			
-			_refreshTimer.Interval = 1000;
-			_refreshTimer.Tick += RefreshTimer_Tick;
-		}
+            _disableReticleHotkey = CreateHotkey(Keys.Delete, DisableReticleHotkey_Pressed);
+            _cycleReticleHotkey = CreateHotkey(Keys.Insert, CycleReticleHotkey_Pressed);
 
-		void RegisterSettingsKeys() {
-			_resetHotkey.Register(this);
-			_upHotkey.Register(this);
-			_downHotkey.Register(this);
-			_leftHotkey.Register(this);
-			_rightHotkey.Register(this);
-		}
-		void UnregisterSettingsKeys() {
-			if (_inSettingsMode) {
-				_resetHotkey.Unregister();
-				_upHotkey.Unregister();
-				_downHotkey.Unregister();
-				_leftHotkey.Unregister();
-				_rightHotkey.Unregister();
-			}
-		}
+            _keyboard = new InputSimulator().Keyboard;
 
-		void Reticle_Load(object sender, EventArgs e) {
-			RefreshPosition();
-			_refreshTimer.Start();
-			_exitHotkey.Register(this);
-			_settingsHotkey.Register(this);
+            _refreshTimer.Interval = 1000;
+            _refreshTimer.Tick += RefreshTimer_Tick;
 
-			EnableRunFeature();
-		}
+            // load reticle images
+            var path = Path.Combine(Environment.CurrentDirectory, "img");
+            var files = Directory.GetFiles(path, "*.png");
+            foreach (var file in files) {
+                _reticleImages.Add(Image.FromFile(file));
+            }
+        }
 
-		void Reticle_FormClosed(object sender, FormClosedEventArgs e) {
-			_refreshTimer.Tick -= RefreshTimer_Tick;
-			_refreshTimer.Stop();
-			_refreshTimer.Dispose();
+        void RegisterSettingsKeys() {
+            _resetHotkey.Register(this);
+            _upHotkey.Register(this);
+            _downHotkey.Register(this);
+            _leftHotkey.Register(this);
+            _rightHotkey.Register(this);
+            _disableReticleHotkey.Register(this);
+            _cycleReticleHotkey.Register(this);
+        }
 
-			DisableRunFeature();
+        void UnregisterSettingsKeys() {
+            if (_inSettingsMode) {
+                _resetHotkey.Unregister();
+                _upHotkey.Unregister();
+                _downHotkey.Unregister();
+                _leftHotkey.Unregister();
+                _rightHotkey.Unregister();
+                _disableReticleHotkey.Unregister();
+                _cycleReticleHotkey.Unregister();
+            }
+        }
 
-			UnregisterSettingsKeys();
-			_settingsHotkey.Unregister();
-			_exitHotkey.Unregister();
-		}
+        void Reticle_Load(object sender, EventArgs e) {
+            Opacity = 0.55;
+            TransparencyKey = Color.White;
+            BackColor = Color.White;
 
-		void RefreshPosition() {
-			SuspendLayout();
+            RefreshReticle();
 
-			var handle = RefreshRustHandle();
-			if (handle == IntPtr.Zero) {
-				Visible = false;
-				return;
-			}
+            _refreshTimer.Start();
+            _exitHotkey.Register(this);
+            _settingsHotkey.Register(this);
 
-			RECT rustWindow;
-			if (!GetWindowRect(new HandleRef(this, handle), out rustWindow))
-				return;
+            EnableRunFeature();
+        }
 
-			var rustWidth = rustWindow.Right - rustWindow.Left;
-			var rustHeight = rustWindow.Bottom - rustWindow.Top;
+        void Reticle_FormClosed(object sender, FormClosedEventArgs e) {
+            _refreshTimer.Tick -= RefreshTimer_Tick;
+            _refreshTimer.Stop();
+            _refreshTimer.Dispose();
 
-			var offsetX = Width / 2;
+            DisableRunFeature();
 
-			var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
-			var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
+            UnregisterSettingsKeys();
+            _settingsHotkey.Unregister();
+            _exitHotkey.Unregister();
+        }
 
-			Location = new Point(left, top);
+        void RefreshReticle() {
+            SuspendLayout();
 
-			Visible = true;
-			ResumeLayout();
-		}
+            var handle = RefreshRustHandle();
+            if (handle == IntPtr.Zero) {
+                Visible = false;
+                return;
+            }
 
-		IntPtr RefreshRustHandle() {
-			var processes = Process.GetProcessesByName("rust");
-			if (processes.Length > 0) {
-				_rustProcess = processes[0];
-				_rustHandle = _rustProcess.MainWindowHandle;
+            RECT rustWindow;
+            if (!GetWindowRect(new HandleRef(this, handle), out rustWindow))
+                return;
 
-				return _rustProcess.MainWindowHandle;
-			}
+            var rustWidth = rustWindow.Right - rustWindow.Left;
+            var rustHeight = rustWindow.Bottom - rustWindow.Top;
 
-			return IntPtr.Zero;
-		}
+            var offsetX = Width / 2;
 
-		Hotkey CreateHotKey(Keys keys, HandledEventHandler handler, bool control = false) {
-			var hotkey = new Hotkey {
-				KeyCode = keys,
-				Control = control
-			};
-			hotkey.Pressed += handler;
-			return hotkey;
-		}
+            var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
+            var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
 
-		void ExitHotkey_Pressed(object sender, HandledEventArgs e) {
-			e.Handled = true;
-			Close();
-		}
+            Location = new Point(left, top);
+            Width = BackgroundImage.Width;
+            Height = BackgroundImage.Height;
 
-		#region Run Feature
+            Visible = _reticleEnabled;
+            ResumeLayout();
+        }
 
-		void EnableRunFeature() {
-			_runOnHotkey.Register(this);
-			_runOffHotkey.Register(this);
-		}
+        IntPtr RefreshRustHandle() {
+            var processes = Process.GetProcessesByName("rust");
+            if (processes.Length > 0) {
+                _rustProcess = processes[0];
+                _rustHandle = _rustProcess.MainWindowHandle;
 
-		void DisableRunFeature() {
-			_runOnHotkey.Unregister();
-			_runOffHotkey.Unregister(); 
-		}
+                return _rustProcess.MainWindowHandle;
+            }
 
-		void RunHotkey_Pressed(object sender, HandledEventArgs e) {
-			InRunMode = !InRunMode;
-			ShowWindow(_rustHandle, 1);
+            return IntPtr.Zero;
+        }
 
-			if (Visible && InRunMode) {
-				_keyboard.KeyDown(VirtualKeyCode.SHIFT);
-				_keyboard.KeyDown(VirtualKeyCode.VK_W);
-			} else {
-				_keyboard.KeyUp(VirtualKeyCode.SHIFT);
-				_keyboard.KeyUp(VirtualKeyCode.VK_W);
-			}
+        Hotkey CreateHotkey(Keys keys, HandledEventHandler handler, bool control = false) {
+            var hotkey = new Hotkey {
+                KeyCode = keys,
+                Control = control
+            };
+            hotkey.Pressed += handler;
+            return hotkey;
+        }
 
-			e.Handled = true;
-		}
+        void ExitHotkey_Pressed(object sender, HandledEventArgs e) {
+            e.Handled = true;
+            Close();
+        }
 
-		#endregion
+        #region Run Feature
 
-		#region Positioning Feature
+        void EnableRunFeature() {
+            _runOnHotkey.Register(this);
+            _runOffHotkey.Register(this);
+        }
 
-		void RefreshTimer_Tick(object sender, EventArgs e) {
-			RefreshPosition();
-		}
+        void DisableRunFeature() {
+            _runOnHotkey.Unregister();
+            _runOffHotkey.Unregister();
+        }
 
-		void SettingsHotkey_Pressed(object sender, HandledEventArgs e) {
-			_inSettingsMode = !_inSettingsMode;
+        void RunHotkey_Pressed(object sender, HandledEventArgs e) {
+            InRunMode = !InRunMode;
+            ShowWindow(_rustHandle, 1);
 
-			if (_inSettingsMode)
-				RegisterSettingsKeys();
-			else
-				UnregisterSettingsKeys();
-		}
+            if (Visible && InRunMode) {
+                _keyboard.KeyDown(VirtualKeyCode.SHIFT);
+                _keyboard.KeyDown(VirtualKeyCode.VK_W);
+            } else {
+                _keyboard.KeyUp(VirtualKeyCode.SHIFT);
+                _keyboard.KeyUp(VirtualKeyCode.VK_W);
+            }
 
-		void ResetHotkey_Pressed(object sender, HandledEventArgs e) {
-			if (_inSettingsMode) {
-				e.Handled = true;
-				// best guess for center screen
-				OffsetX = 1;
-				OffsetY = 6;
-				RefreshPosition();
-			}
-		}
+            e.Handled = true;
+        }
 
-		void UpHotkey_Pressed(object sender, HandledEventArgs e) {
-			if (_inSettingsMode) {
-				e.Handled = true;
-				OffsetY -= 1;
-				RefreshPosition();
-			}
-		}
+        #endregion
 
-		void DownHotkey_Pressed(object sender, HandledEventArgs e) {
-			if (_inSettingsMode) {
-				e.Handled = true;
-				OffsetY += 1;
-				RefreshPosition();
-			}
-		}
+        #region Positioning Feature
 
-		void LeftHotkey_Pressed(object sender, HandledEventArgs e) {
-			if (_inSettingsMode) {
-				e.Handled = true;
-				OffsetX -= 1;
-				RefreshPosition();
-			}
-		}
+        void RefreshTimer_Tick(object sender, EventArgs e) {
+            RefreshReticle();
+        }
 
-		void RightHotkey_Pressed(object sender, HandledEventArgs e) {
-			if (_inSettingsMode) {
-				e.Handled = true;
-				OffsetX += 1;
-				RefreshPosition();
-			}
-		}
+        void SettingsHotkey_Pressed(object sender, HandledEventArgs e) {
+            _inSettingsMode = !_inSettingsMode;
 
-		void Reticle_MouseDown(object sender, MouseEventArgs e) {
-			if (e.Button == MouseButtons.Left) {
-				ReleaseCapture();
-				SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
-			}
-		}
+            if (_inSettingsMode)
+                RegisterSettingsKeys();
+            else
+                UnregisterSettingsKeys();
+        }
 
-		#endregion
-	}
+        void ResetHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                e.Handled = true;
+                // best guess for center screen
+                OffsetX = 1;
+                OffsetY = 6;
+                RefreshReticle();
+            }
+        }
+
+        void UpHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                e.Handled = true;
+                OffsetY -= 1;
+                RefreshReticle();
+            }
+        }
+
+        void DownHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                e.Handled = true;
+                OffsetY += 1;
+                RefreshReticle();
+            }
+        }
+
+        void LeftHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                e.Handled = true;
+                OffsetX -= 1;
+                RefreshReticle();
+            }
+        }
+
+        void RightHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                e.Handled = true;
+                OffsetX += 1;
+                RefreshReticle();
+            }
+        }
+
+        #endregion
+
+        #region User Reticles Feature
+
+        void DisableReticleHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                _reticleEnabled = !_reticleEnabled;
+                RefreshReticle();
+            }
+        }
+
+        void CycleReticleHotkey_Pressed(object sender, HandledEventArgs e) {
+            if (_inSettingsMode) {
+                if (!_reticleEnabled) {
+                    _reticleEnabled = true;
+                }
+
+                _reticleIndex = _reticleIndex < _reticleImages.Count - 1
+                    ? _reticleIndex + 1
+                    : 0;
+
+                BackgroundImage = _reticleImages[_reticleIndex];
+
+                RefreshReticle();
+            }
+        }
+
+        #endregion
+    }
 }
