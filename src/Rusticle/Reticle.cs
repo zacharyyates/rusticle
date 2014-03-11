@@ -33,7 +33,9 @@ namespace Rusticle {
         Process _rustProcess;
         IntPtr _rustHandle = IntPtr.Zero;
 
-        bool _inSettingsMode;
+        bool InSettingsMode {
+            get { return _resetHotkey.Registered; }
+        }
 
         object _lockRunMode = new object();
         bool InRunMode {
@@ -107,6 +109,10 @@ namespace Rusticle {
 
             // load reticle images
             var path = Path.Combine(Environment.CurrentDirectory, "img");
+            if (!Directory.Exists(path)) {
+                Directory.CreateDirectory(path);
+            }
+
             var files = Directory.GetFiles(path, "*.png");
             foreach (var file in files) {
                 _reticleImages.Add(Image.FromFile(file));
@@ -115,21 +121,25 @@ namespace Rusticle {
 
         void RegisterSettingsKeys() {
             _resetHotkey.Register(this);
+
             _upHotkey.Register(this);
             _downHotkey.Register(this);
             _leftHotkey.Register(this);
             _rightHotkey.Register(this);
+
             _disableReticleHotkey.Register(this);
             _cycleReticleHotkey.Register(this);
         }
 
         void UnregisterSettingsKeys() {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 _resetHotkey.Unregister();
+
                 _upHotkey.Unregister();
                 _downHotkey.Unregister();
                 _leftHotkey.Unregister();
                 _rightHotkey.Unregister();
+                
                 _disableReticleHotkey.Unregister();
                 _cycleReticleHotkey.Unregister();
             }
@@ -167,6 +177,7 @@ namespace Rusticle {
             var handle = RefreshRustHandle();
             if (handle == IntPtr.Zero) {
                 Visible = false;
+                TopMost = false;
                 return;
             }
 
@@ -187,6 +198,7 @@ namespace Rusticle {
             Height = BackgroundImage.Height;
 
             Visible = _reticleEnabled;
+            TopMost = true;
             ResumeLayout();
         }
 
@@ -252,16 +264,14 @@ namespace Rusticle {
         }
 
         void SettingsHotkey_Pressed(object sender, HandledEventArgs e) {
-            _inSettingsMode = !_inSettingsMode;
-
-            if (_inSettingsMode)
-                RegisterSettingsKeys();
-            else
+            if (InSettingsMode)
                 UnregisterSettingsKeys();
+            else
+                RegisterSettingsKeys();
         }
 
         void ResetHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 e.Handled = true;
                 // best guess for center screen
                 OffsetX = 1;
@@ -271,7 +281,7 @@ namespace Rusticle {
         }
 
         void UpHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 e.Handled = true;
                 OffsetY -= 1;
                 RefreshReticle();
@@ -279,7 +289,7 @@ namespace Rusticle {
         }
 
         void DownHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 e.Handled = true;
                 OffsetY += 1;
                 RefreshReticle();
@@ -287,7 +297,7 @@ namespace Rusticle {
         }
 
         void LeftHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 e.Handled = true;
                 OffsetX -= 1;
                 RefreshReticle();
@@ -295,7 +305,7 @@ namespace Rusticle {
         }
 
         void RightHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 e.Handled = true;
                 OffsetX += 1;
                 RefreshReticle();
@@ -307,25 +317,27 @@ namespace Rusticle {
         #region User Reticles Feature
 
         void DisableReticleHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 _reticleEnabled = !_reticleEnabled;
                 RefreshReticle();
             }
         }
 
         void CycleReticleHotkey_Pressed(object sender, HandledEventArgs e) {
-            if (_inSettingsMode) {
+            if (InSettingsMode) {
                 if (!_reticleEnabled) {
                     _reticleEnabled = true;
                 }
 
-                _reticleIndex = _reticleIndex < _reticleImages.Count - 1
-                    ? _reticleIndex + 1
-                    : 0;
+                if (_reticleImages.Count > 0) {
+                    _reticleIndex = _reticleIndex < _reticleImages.Count - 1
+                        ? _reticleIndex + 1
+                        : 0;
 
-                BackgroundImage = _reticleImages[_reticleIndex];
+                    BackgroundImage = _reticleImages[_reticleIndex];
 
-                RefreshReticle();
+                    RefreshReticle();
+                }
             }
         }
 

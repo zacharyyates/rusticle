@@ -23,24 +23,22 @@
 		/// the contents of this method with the code editor.
 		/// </summary>
 		private void InitializeComponent() {
-			this.SuspendLayout();
-			// 
-			// Reticle
-			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-			this.BackgroundImage = global::Rusticle.Properties.Resources.chevron_reticle_red;
-			this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
-			this.ClientSize = new System.Drawing.Size(41, 69);
-			this.DoubleBuffered = true;
-			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-			this.Name = "Reticle";
-			this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-			this.TopMost = true;
-			this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Reticle_FormClosed);
-			this.Load += new System.EventHandler(this.Reticle_Load);
-			this.ResumeLayout(false);
+            this.SuspendLayout();
+            // 
+            // Reticle
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackgroundImage = global::Rusticle.Properties.Resources.chevron_reticle_red;
+            this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.ClientSize = new System.Drawing.Size(41, 69);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Name = "Reticle";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
+            this.TopMost = true;
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Reticle_FormClosed);
+            this.Load += new System.EventHandler(this.Reticle_Load);
+            this.ResumeLayout(false);
 
 		}
 
