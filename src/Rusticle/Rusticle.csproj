@@ -83,8 +83,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="assets\chevron-reticle-green.png" />
-    <Content Include="assets\chevron-reticle-red.png" />
+    <Content Include="img\chevron-reticle-green.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="img\chevron-reticle-red.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="chevron-reticle-red.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -95,6 +99,10 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>del rusticle.7z
+"$(SolutionDir)..\lib\7z.exe" a -t7z -mx09 rusticle.7z rusticle.exe rusticle.exe.config *.dll img\*.png</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
