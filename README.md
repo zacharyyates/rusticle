@@ -1,7 +1,7 @@
 rusticle
 ========
 
-A ranging bow reticle for rust.
+A ranging bow reticle for rust.  Use at your own risk, you might be banned :(
 
 How to use it
 -------------
