@@ -28,7 +28,7 @@ namespace Rusticle {
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-        Timer _refreshTimer = new Timer();
+        readonly Timer _refreshTimer = new Timer();
 
         Process _rustProcess;
         IntPtr _rustHandle = IntPtr.Zero;
@@ -37,19 +37,6 @@ namespace Rusticle {
             get { return _resetHotkey.Registered; }
         }
 
-        object _lockRunMode = new object();
-        bool InRunMode {
-            get {
-                lock (_lockRunMode) {
-                    return _inRunMode;
-                }
-            }
-            set {
-                lock (_lockRunMode) {
-                    _inRunMode = value;
-                }
-            }
-        }
         bool _inRunMode;
 
         int OffsetX {
@@ -62,30 +49,35 @@ namespace Rusticle {
             set { Properties.Settings.Default.OffsetY = value; }
         }
 
-        List<Image> _reticleImages = new List<Image>();
         int _reticleIndex;
         bool _reticleEnabled = true;
+        readonly List<Image> _reticleImages = new List<Image>();
 
-        IKeyboardSimulator _keyboard;
+        readonly IKeyboardSimulator _keyboard;
 
-        Hotkey _settingsHotkey;
-        Hotkey _resetHotkey;
-        Hotkey _exitHotkey;
+        readonly Hotkey _settingsHotkey;
+        readonly Hotkey _resetHotkey;
+        readonly Hotkey _exitHotkey;
 
-        Hotkey _upHotkey;
-        Hotkey _downHotkey;
-        Hotkey _leftHotkey;
-        Hotkey _rightHotkey;
+        readonly Hotkey _upHotkey;
+        readonly Hotkey _downHotkey;
+        readonly Hotkey _leftHotkey;
+        readonly Hotkey _rightHotkey;
 
-        Hotkey _runOnHotkey;
-        Hotkey _runOffHotkey;
+        readonly Hotkey _runOnHotkey;
+        readonly Hotkey _runOffHotkey;
+        readonly Hotkey _wHotkey;
+        readonly Hotkey _aHotkey;
+        readonly Hotkey _sHotkey;
+        readonly Hotkey _dHotkey;
+        readonly Hotkey _ctrlHotkey;
 
-        Hotkey _disableReticleHotkey;
-        Hotkey _cycleReticleHotkey;
+        readonly Hotkey _disableReticleHotkey;
+        readonly Hotkey _cycleReticleHotkey;
         
         public Reticle() {
             InitializeComponent();
-
+            
             _exitHotkey = CreateHotkey(Keys.End, ExitHotkey_Pressed);
 
             _settingsHotkey = CreateHotkey(Keys.Pause, SettingsHotkey_Pressed);
@@ -95,9 +87,13 @@ namespace Rusticle {
             _leftHotkey = CreateHotkey(Keys.Left, LeftHotkey_Pressed);
             _rightHotkey = CreateHotkey(Keys.Right, RightHotkey_Pressed);
 
-            _runOnHotkey = CreateHotkey(Keys.NumLock, RunHotkey_Pressed);
-            _runOffHotkey = CreateHotkey(Keys.NumLock, RunHotkey_Pressed);
-            _runOffHotkey.Shift = true;
+            _runOnHotkey = CreateHotkey(Keys.CapsLock, ToggleAutorun);
+            _runOffHotkey = CreateHotkey(Keys.CapsLock, ToggleAutorun, shift: true);
+            _wHotkey = CreateHotkey(Keys.W, StopAutorun, shift: true);
+            _aHotkey = CreateHotkey(Keys.A, StopAutorun, shift: true);
+            _sHotkey = CreateHotkey(Keys.S, StopAutorun, shift: true);
+            _dHotkey = CreateHotkey(Keys.D, StopAutorun, shift: true);
+            _ctrlHotkey = CreateHotkey(Keys.LControlKey, StopAutorun, shift: true);
 
             _disableReticleHotkey = CreateHotkey(Keys.Delete, DisableReticleHotkey_Pressed);
             _cycleReticleHotkey = CreateHotkey(Keys.Insert, CycleReticleHotkey_Pressed);
@@ -214,10 +210,11 @@ namespace Rusticle {
             return IntPtr.Zero;
         }
 
-        Hotkey CreateHotkey(Keys keys, HandledEventHandler handler, bool control = false) {
+        Hotkey CreateHotkey(Keys keys, HandledEventHandler handler, bool control = false, bool shift = false) {
             var hotkey = new Hotkey {
                 KeyCode = keys,
-                Control = control
+                Control = control,
+                Shift = shift
             };
             hotkey.Pressed += handler;
             return hotkey;
@@ -240,19 +237,52 @@ namespace Rusticle {
             _runOffHotkey.Unregister();
         }
 
-        void RunHotkey_Pressed(object sender, HandledEventArgs e) {
-            InRunMode = !InRunMode;
+        void ToggleAutorun(object sender, HandledEventArgs e) {
+            _inRunMode = !_inRunMode;
             ShowWindow(_rustHandle, 1);
 
-            if (Visible && InRunMode) {
-                _keyboard.KeyDown(VirtualKeyCode.SHIFT);
-                _keyboard.KeyDown(VirtualKeyCode.VK_W);
+            if (!_inRunMode) {
+                StartAutorun(sender, e);
             } else {
-                _keyboard.KeyUp(VirtualKeyCode.SHIFT);
-                _keyboard.KeyUp(VirtualKeyCode.VK_W);
+                StopAutorun(sender, e);
             }
+        }
 
+        void StartAutorun(object sender, HandledEventArgs e) {
+            _keyboard.KeyDown(VirtualKeyCode.SHIFT);
+            _keyboard.KeyDown(VirtualKeyCode.VK_W);
+
+            RegisterAutorunKeys();
+
+            _inRunMode = true;
             e.Handled = true;
+        }
+
+        void StopAutorun(object sender, HandledEventArgs e) {
+            UnregisterAutorunKeys();
+
+            _keyboard.KeyUp(VirtualKeyCode.SHIFT);
+            _keyboard.KeyUp(VirtualKeyCode.VK_W);
+
+            _inRunMode = false;
+            e.Handled = true;
+        }
+
+        void RegisterAutorunKeys() {
+            //_wHotkey.Register(this);
+            _aHotkey.Register(this);
+            _sHotkey.Register(this);
+            _dHotkey.Register(this);
+            _ctrlHotkey.Register(this);
+        }
+        void UnregisterAutorunKeys() {
+            if (_inRunMode) {
+                //_wHotkey.Unregister();
+                _aHotkey.Unregister();
+                _sHotkey.Unregister();
+                _dHotkey.Unregister();
+                _ctrlHotkey.Unregister();
+            }
         }
 
         #endregion
