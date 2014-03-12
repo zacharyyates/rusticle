@@ -18,15 +18,17 @@ namespace Rusticle {
         static extern bool GetWindowRect(HandleRef hWnd, out RECT lpRect);
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct RECT {
+        struct RECT {
             public int Left; // x position of upper-left corner
             public int Top; // y position of upper-left corner
             public int Right; // x position of lower-right corner
             public int Bottom; // y position of lower-right corner
         }
 
+        // http://msdn.microsoft.com/en-us/library/windows/desktop/ms633548(v=vs.85).aspx
         [DllImport("user32.dll")]
         static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        const int SW_SHOW = 5;  // Activates the window and displays it in its current size and position.
 
         readonly Timer _refreshTimer = new Timer();
 
@@ -238,7 +240,6 @@ namespace Rusticle {
 
         void ToggleAutorun(object sender, HandledEventArgs e) {
             _inRunMode = !_inRunMode;
-            //ShowWindow(_rustHandle, 1);
 
             if (!_inRunMode) {
                 StartAutorun(sender, e);
@@ -248,6 +249,7 @@ namespace Rusticle {
         }
 
         void StartAutorun(object sender, HandledEventArgs e) {
+            ShowWindow(_rustHandle, SW_SHOW);
             _keyboard.KeyDown(VirtualKeyCode.SHIFT);
             _keyboard.KeyDown(VirtualKeyCode.VK_W);
 
@@ -260,6 +262,7 @@ namespace Rusticle {
         void StopAutorun(object sender, HandledEventArgs e) {
             UnregisterAutorunKeys();
 
+            ShowWindow(_rustHandle, SW_SHOW);
             _keyboard.KeyUp(VirtualKeyCode.SHIFT);
             _keyboard.KeyUp(VirtualKeyCode.VK_W);
 
