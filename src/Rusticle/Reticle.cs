@@ -239,7 +239,7 @@ namespace Rusticle {
 
         void ToggleAutorun(object sender, HandledEventArgs e) {
             _inRunMode = !_inRunMode;
-            ShowWindow(_rustHandle, 1);
+            //ShowWindow(_rustHandle, 1);
 
             if (!_inRunMode) {
                 StartAutorun(sender, e);
