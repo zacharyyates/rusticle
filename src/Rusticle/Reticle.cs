@@ -50,7 +50,7 @@ namespace Rusticle {
         }
 
         int _reticleIndex;
-        bool _reticleEnabled = true;
+        bool _reticleEnabled;
         readonly List<Image> _reticleImages = new List<Image>();
 
         readonly IKeyboardSimulator _keyboard;
@@ -169,32 +169,31 @@ namespace Rusticle {
 
         void RefreshReticle() {
             SuspendLayout();
+            Visible = false;
+            TopMost = false;
 
             var handle = RefreshRustHandle();
-            if (handle == IntPtr.Zero) {
-                Visible = false;
-                TopMost = false;
-                return;
+            if (_reticleEnabled && handle != IntPtr.Zero) {
+
+                RECT rustWindow;
+                if (GetWindowRect(new HandleRef(this, handle), out rustWindow)) {
+
+                    var rustWidth = rustWindow.Right - rustWindow.Left;
+                    var rustHeight = rustWindow.Bottom - rustWindow.Top;
+
+                    var offsetX = Width / 2;
+
+                    var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
+                    var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
+
+                    Location = new Point(left, top);
+                    Width = BackgroundImage.Width;
+                    Height = BackgroundImage.Height;
+
+                    Visible = true;
+                    TopMost = true;
+                }
             }
-
-            RECT rustWindow;
-            if (!GetWindowRect(new HandleRef(this, handle), out rustWindow))
-                return;
-
-            var rustWidth = rustWindow.Right - rustWindow.Left;
-            var rustHeight = rustWindow.Bottom - rustWindow.Top;
-
-            var offsetX = Width / 2;
-
-            var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
-            var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
-
-            Location = new Point(left, top);
-            Width = BackgroundImage.Width;
-            Height = BackgroundImage.Height;
-
-            Visible = _reticleEnabled;
-            TopMost = true;
             ResumeLayout();
         }
 
