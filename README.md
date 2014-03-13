@@ -15,7 +15,7 @@ Commands
 | Key         | Action
 | --------    | ------
 | End         | Exit rusticle
-| Num Lock    | Enter/exit autorun mode
+| Caps Lock   | Enter/exit autorun mode
 | Pause       | Enter/exit adjustment mode
 | Up          | Adjust reticle up
 | Down        | Adjust reticle down
