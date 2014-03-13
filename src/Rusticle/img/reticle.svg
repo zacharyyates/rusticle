@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="11.313708"
-     inkscape:cx="253.04639"
-     inkscape:cy="784.57932"
+     inkscape:zoom="3.9999998"
+     inkscape:cx="453.35635"
+     inkscape:cy="745.72946"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -51,39 +51,6 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
-    <rect
-       style="fill:#808080;fill-opacity:1"
-       id="rect3011-1-7-4-2-7-1-1"
-       width="0.5"
-       height="16"
-       x="265.2655"
-       y="-264.5"
-       transform="matrix(0,1,-1,0,0,0)"
-       inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
-    <rect
-       style="fill:#808080;fill-opacity:1"
-       id="rect3011-1-7-4-2-7-1-5"
-       width="0.5"
-       height="8"
-       x="272.10602"
-       y="-260.5"
-       transform="matrix(0,1,-1,0,0,0)"
-       inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
-    <rect
-       style="fill:#808080;fill-opacity:1"
-       id="rect3011-1-7-4-2-7-1-2"
-       width="0.5"
-       height="4"
-       x="278.94638"
-       y="-258.5"
-       transform="matrix(0,1,-1,0,0,0)"
-       inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
     <g
        id="g3122">
       <g
@@ -235,17 +202,54 @@
          id="rect3011-1-7-4-2"
          style="fill:#000000;fill-opacity:1" />
     </g>
-    <rect
-       style="fill:#808080;fill-opacity:1"
-       id="rect3011-1-7-4-2-7-1"
-       width="0.5"
-       height="32"
-       x="258.42511"
-       y="-272.5"
-       transform="matrix(0,1,-1,0,0,0)"
-       inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
-       inkscape:export-xdpi="90"
-       inkscape:export-ydpi="90" />
+    <g
+       id="g3018"
+       style="fill:#000000">
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-264.5"
+         x="265.2655"
+         height="16"
+         width="0.5"
+         id="rect3011-1-7-4-2-7-1-1"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-260.5"
+         x="272.10602"
+         height="8"
+         width="0.5"
+         id="rect3011-1-7-4-2-7-1-5"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-258.5"
+         x="278.94638"
+         height="4"
+         width="0.5"
+         id="rect3011-1-7-4-2-7-1-2"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-272.5"
+         x="258.42511"
+         height="32"
+         width="0.5"
+         id="rect3011-1-7-4-2-7-1"
+         style="fill:#000000;fill-opacity:1" />
+    </g>
     <g
        id="g3194">
       <rect
@@ -289,6 +293,84 @@
          height="32"
          width="1"
          id="rect3011-1-7-4-2-7"
+         style="fill:#000000;fill-opacity:1" />
+    </g>
+    <g
+       id="g3132">
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         y="235.36218"
+         x="421.00003"
+         height="6"
+         width="6"
+         id="rect3012-7"
+         style="fill:#66ff00;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         y="245.36218"
+         x="423"
+         height="128"
+         width="2"
+         id="rect3011-1-4"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-417.00003"
+         x="237.36218"
+         height="64"
+         width="2"
+         id="rect3011-1-7-0"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-495"
+         x="237.36218"
+         height="64"
+         width="2"
+         id="rect3011-1-7-4-9"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red-2.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-436"
+         x="287.36215"
+         height="24"
+         width="2"
+         id="rect3011-1-7-4-9-4"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red-2.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-440"
+         x="245.36218"
+         height="32"
+         width="2"
+         id="rect3011-1-7-4-9-8"
+         style="fill:#000000;fill-opacity:1" />
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="C:\Projects\rusticle\src\Rusticle\img\dot-red-2.png"
+         transform="matrix(0,1,-1,0,0,0)"
+         y="-432"
+         x="329.36215"
+         height="16"
+         width="2"
+         id="rect3011-1-7-4-9-45"
          style="fill:#000000;fill-opacity:1" />
     </g>
   </g>
