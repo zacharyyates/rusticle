@@ -123,6 +123,14 @@ namespace MovablePython {
 			this.windowControl = null;
 		}
 
+	    public bool TryUnregister() {
+	        if (registered) {
+	            Unregister();
+                return true;
+	        }
+            return false;
+	    }
+
 		private void Reregister() {
 			// Only do something if the key is already registered
 			if (!this.registered) { return; }

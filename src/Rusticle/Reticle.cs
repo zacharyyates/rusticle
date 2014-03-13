@@ -72,7 +72,6 @@ namespace Rusticle {
         readonly Hotkey _aHotkey;
         readonly Hotkey _sHotkey;
         readonly Hotkey _dHotkey;
-        readonly Hotkey _ctrlHotkey;
 
         readonly Hotkey _disableReticleHotkey;
         readonly Hotkey _cycleReticleHotkey;
@@ -95,7 +94,6 @@ namespace Rusticle {
             _aHotkey = CreateHotkey(Keys.A, StopAutorun, shift: true);
             _sHotkey = CreateHotkey(Keys.S, StopAutorun, shift: true);
             _dHotkey = CreateHotkey(Keys.D, StopAutorun, shift: true);
-            _ctrlHotkey = CreateHotkey(Keys.LControlKey, StopAutorun, shift: true);
 
             _disableReticleHotkey = CreateHotkey(Keys.Delete, DisableReticleHotkey_Pressed);
             _cycleReticleHotkey = CreateHotkey(Keys.Insert, CycleReticleHotkey_Pressed);
@@ -192,15 +190,10 @@ namespace Rusticle {
                 Height = BackgroundImage.Height;
 
                 ResumeLayout();
-                SetReticleVisibility(true);
+                Visible = true;
             } else {
-                SetReticleVisibility(false);
+                Visible = false;
             }
-        }
-
-        void SetReticleVisibility(bool visible) {
-            Visible = visible;
-            TopMost = visible;
         }
 
         IntPtr RefreshRustHandle() {
@@ -245,7 +238,7 @@ namespace Rusticle {
         void ToggleAutorun(object sender, HandledEventArgs e) {
             _inRunMode = !_inRunMode;
 
-            if (!_inRunMode) {
+            if (_inRunMode) {
                 StartAutorun(sender, e);
             } else {
                 StopAutorun(sender, e);
@@ -257,38 +250,27 @@ namespace Rusticle {
             _keyboard.KeyDown(VirtualKeyCode.SHIFT);
             _keyboard.KeyDown(VirtualKeyCode.VK_W);
 
-            RegisterAutorunKeys();
+            _wHotkey.Register(this);
+            _aHotkey.Register(this);
+            _sHotkey.Register(this);
+            _dHotkey.Register(this);
 
             _inRunMode = true;
             e.Handled = true;
         }
 
         void StopAutorun(object sender, HandledEventArgs e) {
-            UnregisterAutorunKeys();
-
             ShowWindow(_rustHandle, SW_SHOW);
             _keyboard.KeyUp(VirtualKeyCode.SHIFT);
             _keyboard.KeyUp(VirtualKeyCode.VK_W);
 
+            _wHotkey.Unregister();
+            _aHotkey.Unregister();
+            _sHotkey.Unregister();
+            _dHotkey.Unregister();
+
             _inRunMode = false;
             e.Handled = true;
-        }
-
-        void RegisterAutorunKeys() {
-            //_wHotkey.Register(this);
-            _aHotkey.Register(this);
-            _sHotkey.Register(this);
-            _dHotkey.Register(this);
-            _ctrlHotkey.Register(this);
-        }
-        void UnregisterAutorunKeys() {
-            if (_inRunMode) {
-                //_wHotkey.Unregister();
-                _aHotkey.Unregister();
-                _sHotkey.Unregister();
-                _dHotkey.Unregister();
-                _ctrlHotkey.Unregister();
-            }
         }
 
         #endregion
