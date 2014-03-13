@@ -25,15 +25,7 @@ namespace Rusticle {
             public int Bottom; // y position of lower-right corner
         }
 
-        // http://msdn.microsoft.com/en-us/library/windows/desktop/ms633548(v=vs.85).aspx
-        [DllImport("user32.dll")]
-        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        const int SW_SHOW = 5;  // Activates the window and displays it in its current size and position.
-
         readonly Timer _refreshTimer = new Timer();
-
-        Process _rustProcess;
-        IntPtr _rustHandle = IntPtr.Zero;
 
         bool InSettingsMode {
             get { return _resetHotkey.Registered; }
@@ -199,10 +191,8 @@ namespace Rusticle {
         IntPtr RefreshRustHandle() {
             var processes = Process.GetProcessesByName("rust");
             if (processes.Length > 0) {
-                _rustProcess = processes[0];
-                _rustHandle = _rustProcess.MainWindowHandle;
-
-                return _rustProcess.MainWindowHandle;
+                var process = processes[0];
+                return process.MainWindowHandle;
             }
 
             return IntPtr.Zero;
@@ -246,7 +236,6 @@ namespace Rusticle {
         }
 
         void StartAutorun(object sender, HandledEventArgs e) {
-            ShowWindow(_rustHandle, SW_SHOW);
             _keyboard.KeyDown(VirtualKeyCode.SHIFT);
             _keyboard.KeyDown(VirtualKeyCode.VK_W);
 
@@ -260,7 +249,6 @@ namespace Rusticle {
         }
 
         void StopAutorun(object sender, HandledEventArgs e) {
-            ShowWindow(_rustHandle, SW_SHOW);
             _keyboard.KeyUp(VirtualKeyCode.SHIFT);
             _keyboard.KeyUp(VirtualKeyCode.VK_W);
 
