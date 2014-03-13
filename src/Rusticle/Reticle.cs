@@ -170,33 +170,37 @@ namespace Rusticle {
         }
 
         void RefreshReticle() {
-            SuspendLayout();
-            Visible = false;
-            TopMost = false;
-
             var handle = RefreshRustHandle();
-            if (_reticleEnabled && handle != IntPtr.Zero) {
+            RECT rustWindow;
 
-                RECT rustWindow;
-                if (GetWindowRect(new HandleRef(this, handle), out rustWindow)) {
+            if (_reticleEnabled &&
+                handle != IntPtr.Zero &&
+                GetWindowRect(new HandleRef(this, handle), out rustWindow)) {
 
-                    var rustWidth = rustWindow.Right - rustWindow.Left;
-                    var rustHeight = rustWindow.Bottom - rustWindow.Top;
+                var rustWidth = rustWindow.Right - rustWindow.Left;
+                var rustHeight = rustWindow.Bottom - rustWindow.Top;
 
-                    var offsetX = Width / 2;
+                var offsetX = Width / 2;
 
-                    var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
-                    var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
+                var left = rustWindow.Left - offsetX + (rustWidth / 2) + OffsetX;
+                var top = rustWindow.Top + (rustHeight / 2) + OffsetY;
 
-                    Location = new Point(left, top);
-                    Width = BackgroundImage.Width;
-                    Height = BackgroundImage.Height;
+                SuspendLayout();
 
-                    Visible = true;
-                    TopMost = true;
-                }
+                Location = new Point(left, top);
+                Width = BackgroundImage.Width;
+                Height = BackgroundImage.Height;
+
+                ResumeLayout();
+                SetReticleVisibility(true);
+            } else {
+                SetReticleVisibility(false);
             }
-            ResumeLayout();
+        }
+
+        void SetReticleVisibility(bool visible) {
+            Visible = visible;
+            TopMost = visible;
         }
 
         IntPtr RefreshRustHandle() {
